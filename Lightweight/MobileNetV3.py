@@ -12,7 +12,7 @@ class HardSwish(nn.Module):
 
 def ConvBNActivation(in_channels,out_channels,kernel_size,stride,activate):
     return nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=(kernel_size-1)//2),
+            nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=(kernel_size-1)//2, groups=in_channels),
             nn.BatchNorm2d(out_channels),
             nn.ReLU6(inplace=True) if activate == 'relu' else HardSwish()
         )
@@ -137,7 +137,7 @@ class MobileNetV3(nn.Module):
                 HardSwish(inplace=True),
             )
 
-        self.classifier = nn.Conv2d(in_channels=1280, out_channels=num_classes, kernel_size=1, stride=1)
+        self.classifier = nn.Linear(in_features=1280,out_features=num_classes)
 
     def init_params(self):
         for m in self.modules():
@@ -156,8 +156,8 @@ class MobileNetV3(nn.Module):
         else:
             x = self.small_bottleneck(x)
             x = self.small_last_stage(x)
+        x = x.view(x.size(0), -1)
         out = self.classifier(x)
-        out = out.view(out.size(0), -1)
         return out
 
 if __name__ == '__main__':
